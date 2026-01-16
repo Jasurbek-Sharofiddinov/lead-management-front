@@ -1,7 +1,7 @@
 import axios from 'axios'
 
-// Use relative path for proxy in dev, or full URL for direct access
-const API_BASE = '/api'
+// Use environment variable or default to production API
+const API_BASE = import.meta.env.VITE_API_URL || 'https://api.wolfcity.online/api'
 
 const api = axios.create({
   baseURL: API_BASE,
