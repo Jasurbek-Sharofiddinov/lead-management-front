@@ -39,6 +39,8 @@ api.interceptors.response.use(
 export const login = (credentials) => api.post('/auth/login', credentials)
 export const getCurrentUser = () => api.get('/auth/me')
 export const registerUser = (data) => api.post('/auth/register', data)
+export const updateProfile = (data) => api.put('/auth/profile', data)
+export const changePassword = (data) => api.post('/auth/change-password', data)
 
 // Users (admin)
 export const getUsers = () => api.get('/users')

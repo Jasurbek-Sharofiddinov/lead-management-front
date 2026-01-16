@@ -9,6 +9,7 @@ import LeadDetail from './views/LeadDetail.vue'
 import Import from './views/Import.vue'
 import Settings from './views/Settings.vue'
 import Login from './views/Login.vue'
+import Profile from './views/Profile.vue'
 
 const routes = [
   { path: '/login', name: 'Login', component: Login, meta: { public: true } },
@@ -17,6 +18,7 @@ const routes = [
   { path: '/leads/:id', name: 'LeadDetail', component: LeadDetail },
   { path: '/import', name: 'Import', component: Import, meta: { adminOnly: true } },
   { path: '/settings', name: 'Settings', component: Settings, meta: { adminOnly: true } },
+  { path: '/profile', name: 'Profile', component: Profile },
 ]
 
 const router = createRouter({
