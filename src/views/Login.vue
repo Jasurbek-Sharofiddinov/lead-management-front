@@ -90,9 +90,6 @@ const handleLogin = async () => {
         </button>
       </form>
 
-      <div class="login-footer">
-        <p>Default credentials: admin / admin123</p>
-      </div>
     </div>
   </div>
 </template>
@@ -234,10 +231,4 @@ const handleLogin = async () => {
   to { transform: rotate(360deg); }
 }
 
-.login-footer {
-  margin-top: 24px;
-  text-align: center;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
-}
 </style>
