@@ -22,9 +22,10 @@ const fetchStats = async () => {
 
 const statusColors = {
   new: 'var(--info)',
-  contacted: 'var(--warning)',
-  qualified: 'var(--accent-primary)',
-  proposal: '#a855f7',
+  waiting_response: 'var(--warning)',
+  will_callback: '#f97316',
+  not_answered: '#ef4444',
+  audit: '#a855f7',
   won: 'var(--success)',
   lost: 'var(--danger)',
 }

@@ -4,6 +4,7 @@ import App from './App.vue'
 import './style.css'
 
 import Dashboard from './views/Dashboard.vue'
+import KanbanBoard from './views/KanbanBoard.vue'
 import LeadsList from './views/LeadsList.vue'
 import LeadDetail from './views/LeadDetail.vue'
 import Import from './views/Import.vue'
@@ -13,7 +14,8 @@ import Profile from './views/Profile.vue'
 
 const routes = [
   { path: '/login', name: 'Login', component: Login, meta: { public: true } },
-  { path: '/', name: 'Dashboard', component: Dashboard },
+  { path: '/', name: 'Kanban', component: KanbanBoard },
+  { path: '/dashboard', name: 'Dashboard', component: Dashboard },
   { path: '/leads', name: 'Leads', component: LeadsList },
   { path: '/leads/:id', name: 'LeadDetail', component: LeadDetail },
   { path: '/import', name: 'Import', component: Import, meta: { adminOnly: true } },

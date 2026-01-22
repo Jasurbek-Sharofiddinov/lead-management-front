@@ -372,6 +372,30 @@ tr:hover td {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+.badge-waiting_response {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.badge-will_callback {
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.badge-not_answered {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-audit {
+  background: rgba(168, 85, 247, 0.1);
+  color: #a855f7;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
 /* Stats cards */
 .stat-card {
   background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));

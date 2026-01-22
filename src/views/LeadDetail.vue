@@ -193,9 +193,10 @@ const fetchStatuses = async () => {
     // Fallback to default statuses
     statusOptions.value = [
       { name: 'new', color: '#3b82f6' },
-      { name: 'contacted', color: '#eab308' },
-      { name: 'qualified', color: '#8b5cf6' },
-      { name: 'proposal', color: '#f97316' },
+      { name: 'waiting_response', color: '#eab308' },
+      { name: 'will_callback', color: '#f97316' },
+      { name: 'not_answered', color: '#ef4444' },
+      { name: 'audit', color: '#8b5cf6' },
       { name: 'won', color: '#22c55e' },
       { name: 'lost', color: '#ef4444' }
     ]

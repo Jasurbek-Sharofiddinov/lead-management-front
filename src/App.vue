@@ -130,6 +130,15 @@ onUnmounted(() => {
       <nav class="sidebar-nav">
         <RouterLink to="/" class="nav-item" exact-active-class="active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="5" height="18" rx="1"/>
+            <rect x="10" y="8" width="5" height="13" rx="1"/>
+            <rect x="17" y="5" width="5" height="16" rx="1"/>
+          </svg>
+          Pipeline
+        </RouterLink>
+
+        <RouterLink to="/dashboard" class="nav-item" active-class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="7" height="7"/>
             <rect x="14" y="3" width="7" height="7"/>
             <rect x="14" y="14" width="7" height="7"/>

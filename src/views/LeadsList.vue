@@ -8,7 +8,8 @@ import {
   getMonthOptions,
   getAssigneeOptions,
   createLead,
-  getStatuses
+  getStatuses,
+  bulkDeleteLeads
 } from '../services/api'
 
 const router = useRouter()
@@ -17,6 +18,12 @@ const leads = ref([])
 const loading = ref(true)
 const total = ref(0)
 const totalPages = ref(0)
+
+// Selection
+const selectedLeads = ref([])
+const selectAll = ref(false)
+const deleting = ref(false)
+const showDeleteConfirm = ref(false)
 
 // Filters
 const page = ref(1)
@@ -195,6 +202,55 @@ const paginationPages = computed(() => {
   return pages
 })
 
+// Selection functions
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedLeads.value = leads.value.map(lead => lead.id)
+  } else {
+    selectedLeads.value = []
+  }
+}
+
+const toggleSelect = (leadId) => {
+  const index = selectedLeads.value.indexOf(leadId)
+  if (index > -1) {
+    selectedLeads.value.splice(index, 1)
+  } else {
+    selectedLeads.value.push(leadId)
+  }
+  selectAll.value = selectedLeads.value.length === leads.value.length
+}
+
+const isSelected = (leadId) => {
+  return selectedLeads.value.includes(leadId)
+}
+
+const confirmDelete = () => {
+  if (selectedLeads.value.length === 0) return
+  showDeleteConfirm.value = true
+}
+
+const deleteSelected = async () => {
+  try {
+    deleting.value = true
+    await bulkDeleteLeads(selectedLeads.value)
+    selectedLeads.value = []
+    selectAll.value = false
+    showDeleteConfirm.value = false
+    fetchLeads()
+  } catch (err) {
+    console.error('Failed to delete leads:', err)
+  } finally {
+    deleting.value = false
+  }
+}
+
+// Reset selection when page changes
+watch([page, statusFilter, sourceFilter, monthFilter, assigneeFilter], () => {
+  selectedLeads.value = []
+  selectAll.value = false
+})
+
 watch([statusFilter, sourceFilter, monthFilter, assigneeFilter], () => {
   page.value = 1
   fetchLeads()
@@ -214,14 +270,30 @@ onMounted(() => {
       <div class="header-left">
         <h2>Leads</h2>
         <span class="lead-count">{{ total }} total</span>
+        <span v-if="selectedLeads.length > 0" class="selected-count">
+          {{ selectedLeads.length }} selected
+        </span>
       </div>
-      <button class="btn btn-primary" @click="showAddModal = true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="12" y1="5" x2="12" y2="19"/>
-          <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Add Lead
-      </button>
+      <div class="header-actions">
+        <button
+          v-if="selectedLeads.length > 0"
+          class="btn btn-danger"
+          @click="confirmDelete"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          Delete ({{ selectedLeads.length }})
+        </button>
+        <button class="btn btn-primary" @click="showAddModal = true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add Lead
+        </button>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -283,6 +355,13 @@ onMounted(() => {
       <table>
         <thead>
           <tr>
+            <th class="checkbox-col">
+              <input
+                type="checkbox"
+                v-model="selectAll"
+                @change="toggleSelectAll"
+              />
+            </th>
             <th @click="handleSort('name')" class="sortable">
               Name
               <span v-if="sortBy === 'name'" class="sort-icon">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
@@ -306,6 +385,10 @@ onMounted(() => {
               Month
               <span v-if="sortBy === 'source_month'" class="sort-icon">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
             </th>
+            <th @click="handleSort('original_created_time')" class="sortable">
+              Original Date
+              <span v-if="sortBy === 'original_created_time'" class="sort-icon">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
+            </th>
             <th @click="handleSort('created_at')" class="sortable">
               Created
               <span v-if="sortBy === 'created_at'" class="sort-icon">{{ sortOrder === 'asc' ? '↑' : '↓' }}</span>
@@ -316,25 +399,33 @@ onMounted(() => {
           <tr
             v-for="lead in leads"
             :key="lead.id"
-            @click="goToLead(lead.id)"
             class="lead-row"
+            :class="{ 'selected': isSelected(lead.id) }"
           >
-            <td>
+            <td class="checkbox-col" @click.stop>
+              <input
+                type="checkbox"
+                :checked="isSelected(lead.id)"
+                @change="toggleSelect(lead.id)"
+              />
+            </td>
+            <td @click="goToLead(lead.id)">
               <div class="lead-name">{{ lead.name || '-' }}</div>
             </td>
-            <td>{{ lead.company || '-' }}</td>
-            <td class="font-mono">{{ lead.phone || '-' }}</td>
-            <td class="font-mono">{{ lead.dot_number || '-' }}</td>
-            <td>{{ lead.number_of_trucks || '-' }}</td>
-            <td>
+            <td @click="goToLead(lead.id)">{{ lead.company || '-' }}</td>
+            <td @click="goToLead(lead.id)" class="font-mono">{{ lead.phone || '-' }}</td>
+            <td @click="goToLead(lead.id)" class="font-mono">{{ lead.dot_number || '-' }}</td>
+            <td @click="goToLead(lead.id)">{{ lead.number_of_trucks || '-' }}</td>
+            <td @click="goToLead(lead.id)">
               <span class="badge" :style="{ backgroundColor: getStatusColor(lead.status) + '20', color: getStatusColor(lead.status), borderColor: getStatusColor(lead.status) + '40' }">{{ lead.status || 'unknown' }}</span>
             </td>
-            <td>{{ lead.source || '-' }}</td>
-            <td>{{ lead.source_month || '-' }}</td>
-            <td class="text-muted">{{ formatDate(lead.created_at) }}</td>
+            <td @click="goToLead(lead.id)">{{ lead.source || '-' }}</td>
+            <td @click="goToLead(lead.id)">{{ lead.source_month || '-' }}</td>
+            <td @click="goToLead(lead.id)" class="text-muted">{{ formatDate(lead.original_created_time) }}</td>
+            <td @click="goToLead(lead.id)" class="text-muted">{{ formatDate(lead.created_at) }}</td>
           </tr>
           <tr v-if="!loading && leads.length === 0">
-            <td colspan="9" class="empty-cell">
+            <td colspan="11" class="empty-cell">
               <div class="empty-state">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -464,6 +555,28 @@ onMounted(() => {
         </form>
       </div>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
+      <div class="modal modal-sm">
+        <div class="modal-header">
+          <h3 class="modal-title">Delete Leads</h3>
+          <button class="modal-close" @click="showDeleteConfirm = false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        <p>Are you sure you want to delete {{ selectedLeads.length }} lead(s)? This action can be undone by an administrator.</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" @click="showDeleteConfirm = false">Cancel</button>
+          <button class="btn btn-danger" @click="deleteSelected" :disabled="deleting">
+            {{ deleting ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -498,9 +611,45 @@ onMounted(() => {
   color: var(--text-muted);
 }
 
+.selected-count {
+  padding: 4px 12px;
+  background: var(--accent-muted);
+  color: var(--accent-primary);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
 .btn svg {
   width: 18px;
   height: 18px;
+}
+
+/* Checkbox column */
+.checkbox-col {
+  width: 40px;
+  text-align: center;
+}
+
+.checkbox-col input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--accent-primary);
+}
+
+/* Selected row */
+.lead-row.selected {
+  background: var(--accent-muted) !important;
+}
+
+.lead-row.selected td {
+  background: transparent;
 }
 
 /* Filters */
