@@ -57,6 +57,7 @@ export const createLead = (data) => api.post('/leads', data)
 export const updateLead = (id, data) => api.put(`/leads/${id}`, data)
 export const deleteLead = (id) => api.delete(`/leads/${id}`)
 export const bulkDeleteLeads = (leadIds) => api.post('/leads/bulk-delete', { lead_ids: leadIds })
+export const exportLeads = (data) => api.post('/leads/export', data, { responseType: 'blob' })
 
 // Activities
 export const getLeadActivities = (leadId) => api.get(`/leads/${leadId}/activities`)

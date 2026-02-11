@@ -9,7 +9,8 @@ import {
   getAssigneeOptions,
   createLead,
   getStatuses,
-  bulkDeleteLeads
+  bulkDeleteLeads,
+  exportLeads
 } from '../services/api'
 
 const router = useRouter()
@@ -22,8 +23,10 @@ const totalPages = ref(0)
 // Selection
 const selectedLeads = ref([])
 const selectAll = ref(false)
+const selectAllPages = ref(false)
 const deleting = ref(false)
 const showDeleteConfirm = ref(false)
+const exporting = ref(false)
 
 // Filters
 const page = ref(1)
@@ -208,7 +211,17 @@ const toggleSelectAll = () => {
     selectedLeads.value = leads.value.map(lead => lead.id)
   } else {
     selectedLeads.value = []
+    selectAllPages.value = false
   }
+}
+
+const toggleSelectAllPages = () => {
+  selectAllPages.value = true
+}
+
+const clearSelectAllPages = () => {
+  selectAllPages.value = false
+  selectedLeads.value = leads.value.map(lead => lead.id)
 }
 
 const toggleSelect = (leadId) => {
@@ -219,6 +232,7 @@ const toggleSelect = (leadId) => {
     selectedLeads.value.push(leadId)
   }
   selectAll.value = selectedLeads.value.length === leads.value.length
+  if (!selectAll.value) selectAllPages.value = false
 }
 
 const isSelected = (leadId) => {
@@ -245,10 +259,47 @@ const deleteSelected = async () => {
   }
 }
 
+const downloadLeads = async () => {
+  try {
+    exporting.value = true
+    const params = {}
+
+    if (selectedLeads.value.length > 0 && !selectAllPages.value) {
+      params.lead_ids = selectedLeads.value
+    } else {
+      // Export all matching current filters (selectAllPages or no selection)
+      if (search.value) params.search = search.value
+      if (statusFilter.value) params.status = statusFilter.value
+      if (sourceFilter.value) params.source = sourceFilter.value
+      if (monthFilter.value) params.source_month = monthFilter.value
+      if (assigneeFilter.value) params.assigned_to = assigneeFilter.value
+      params.sort_by = sortBy.value
+      params.sort_order = sortOrder.value
+    }
+
+    const response = await exportLeads(params)
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    const filename = response.headers['content-disposition']
+      ?.split('filename=')[1] || 'leads_export.xlsx'
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+  } catch (err) {
+    console.error('Failed to export leads:', err)
+  } finally {
+    exporting.value = false
+  }
+}
+
 // Reset selection when page changes
 watch([page, statusFilter, sourceFilter, monthFilter, assigneeFilter], () => {
   selectedLeads.value = []
   selectAll.value = false
+  selectAllPages.value = false
 })
 
 watch([statusFilter, sourceFilter, monthFilter, assigneeFilter], () => {
@@ -270,11 +321,26 @@ onMounted(() => {
       <div class="header-left">
         <h2>Leads</h2>
         <span class="lead-count">{{ total }} total</span>
-        <span v-if="selectedLeads.length > 0" class="selected-count">
+        <span v-if="selectAllPages" class="selected-count">
+          All {{ total }} selected
+        </span>
+        <span v-else-if="selectedLeads.length > 0" class="selected-count">
           {{ selectedLeads.length }} selected
         </span>
       </div>
       <div class="header-actions">
+        <button
+          class="btn btn-secondary"
+          @click="downloadLeads"
+          :disabled="exporting"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          {{ exporting ? 'Exporting...' : selectAllPages ? `Export All (${total})` : selectedLeads.length > 0 ? `Export (${selectedLeads.length})` : 'Export All' }}
+        </button>
         <button
           v-if="selectedLeads.length > 0"
           class="btn btn-danger"
@@ -350,6 +416,16 @@ onMounted(() => {
     <div class="table-container card">
       <div v-if="loading" class="loading-overlay">
         <div class="spinner"></div>
+      </div>
+
+      <!-- Select all pages banner -->
+      <div v-if="selectAll && totalPages > 1 && !selectAllPages" class="select-all-banner">
+        All {{ leads.length }} leads on this page are selected.
+        <button class="btn-link" @click="toggleSelectAllPages">Select all {{ total }} leads</button>
+      </div>
+      <div v-if="selectAllPages" class="select-all-banner">
+        All {{ total }} leads are selected.
+        <button class="btn-link" @click="clearSelectAllPages">Clear selection</button>
       </div>
 
       <table>
@@ -690,6 +766,32 @@ onMounted(() => {
 .filter-group select {
   width: auto;
   min-width: 140px;
+}
+
+/* Select all banner */
+.select-all-banner {
+  padding: 10px 16px;
+  background: var(--accent-muted);
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--accent-primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0;
+  margin-left: 4px;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  opacity: 0.8;
 }
 
 /* Table */
