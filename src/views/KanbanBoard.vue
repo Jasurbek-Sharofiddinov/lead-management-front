@@ -1,3 +1,7 @@
+<script>
+export default { name: 'KanbanBoard' }
+</script>
+
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
