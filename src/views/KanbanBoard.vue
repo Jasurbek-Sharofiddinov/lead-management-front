@@ -3,7 +3,7 @@ export default { name: 'KanbanBoard' }
 </script>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onActivated, onDeactivated, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   getLeads,
@@ -312,6 +312,19 @@ const formatPhone = (phone) => {
   return phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3')
 }
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const shortenFilename = (filename) => {
+  if (!filename) return ''
+  // Remove extension
+  const name = filename.replace(/\.[^.]+$/, '')
+  return name.length > 18 ? name.slice(0, 18) + '...' : name
+}
+
 const clearFilters = () => {
   dateFrom.value = ''
   dateTo.value = ''
@@ -323,6 +336,41 @@ let searchTimeout = null
 watch(searchQuery, () => {
   clearTimeout(searchTimeout)
   searchTimeout = setTimeout(fetchLeads, 300)
+})
+
+// Scroll position preservation
+const kanbanBoardRef = ref(null)
+let savedScrollLeft = 0
+const columnScrollPositions = new Map()
+
+const saveScrollPositions = () => {
+  if (kanbanBoardRef.value) {
+    savedScrollLeft = kanbanBoardRef.value.scrollLeft
+    kanbanBoardRef.value.querySelectorAll('.column-content').forEach((el, i) => {
+      columnScrollPositions.set(i, el.scrollTop)
+    })
+  }
+}
+
+const restoreScrollPositions = () => {
+  nextTick(() => {
+    if (kanbanBoardRef.value) {
+      kanbanBoardRef.value.scrollLeft = savedScrollLeft
+      kanbanBoardRef.value.querySelectorAll('.column-content').forEach((el, i) => {
+        if (columnScrollPositions.has(i)) {
+          el.scrollTop = columnScrollPositions.get(i)
+        }
+      })
+    }
+  })
+}
+
+onActivated(() => {
+  restoreScrollPositions()
+})
+
+onDeactivated(() => {
+  saveScrollPositions()
 })
 
 onMounted(() => {
@@ -353,23 +401,21 @@ onMounted(() => {
           />
         </div>
 
-        <div class="date-filters">
-          <div class="date-input">
-            <label>From</label>
-            <input type="date" v-model="dateFrom" />
-          </div>
-          <div class="date-input">
-            <label>To</label>
-            <input type="date" v-model="dateTo" />
-          </div>
-          <button
-            v-if="dateFrom || dateTo || searchQuery"
-            class="btn btn-ghost btn-sm"
-            @click="clearFilters"
-          >
-            Clear
-          </button>
+        <div class="date-input">
+          <label>From</label>
+          <input type="date" v-model="dateFrom" />
         </div>
+        <div class="date-input">
+          <label>To</label>
+          <input type="date" v-model="dateTo" />
+        </div>
+        <button
+          v-if="dateFrom || dateTo || searchQuery"
+          class="btn btn-ghost btn-sm"
+          @click="clearFilters"
+        >
+          Clear
+        </button>
       </div>
     </div>
 
@@ -380,7 +426,7 @@ onMounted(() => {
     </div>
 
     <!-- Kanban Board -->
-    <div v-else class="kanban-board">
+    <div v-else ref="kanbanBoardRef" class="kanban-board">
       <div
         v-for="column in kanbanColumns"
         :key="column.id"
@@ -430,6 +476,10 @@ onMounted(() => {
             <div class="lead-info">
               <span v-if="lead.phone" class="lead-phone">{{ formatPhone(lead.phone) }}</span>
               <span v-if="lead.source" class="lead-source">{{ lead.source }}</span>
+            </div>
+            <div class="lead-meta">
+              <span v-if="lead.source_file" class="lead-file" :title="lead.source_file">{{ shortenFilename(lead.source_file) }}</span>
+              <span v-if="lead.created_at" class="lead-date">{{ formatDate(lead.created_at) }}</span>
             </div>
           </div>
 
@@ -602,14 +652,13 @@ onMounted(() => {
 
 .header-filters {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
 }
 
 .search-box {
   position: relative;
-  width: 240px;
+  width: 200px;
 }
 
 .search-box svg {
@@ -624,13 +673,7 @@ onMounted(() => {
 
 .search-box input {
   padding-left: 40px;
-  height: 40px;
-}
-
-.date-filters {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  height: 36px;
 }
 
 .date-input {
@@ -639,15 +682,17 @@ onMounted(() => {
 }
 
 .date-input label {
-  font-size: 11px;
-  margin-bottom: 4px;
+  font-size: 10px;
+  margin-bottom: 2px;
   text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .date-input input {
-  width: 150px;
-  height: 40px;
-  padding: 8px 12px;
+  width: 140px;
+  height: 36px;
+  padding: 6px 10px;
+  font-size: 13px;
 }
 
 /* Loading */
@@ -860,6 +905,32 @@ onMounted(() => {
   background: var(--bg-elevated);
   border-radius: 4px;
   text-transform: capitalize;
+}
+
+.lead-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  gap: 6px;
+}
+
+.lead-file {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 1px 6px;
+  background: var(--bg-elevated);
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.lead-date {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* Lead Actions */
