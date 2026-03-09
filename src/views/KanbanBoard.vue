@@ -1,8 +1,6 @@
 <script setup>
-import { ref, onMounted, onActivated, onDeactivated, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-
-defineOptions({ name: 'KanbanBoard' })
 import {
   getLeads,
   updateLead,
@@ -289,6 +287,8 @@ const saveNote = async () => {
 }
 
 const goToLead = (lead) => {
+  // Save scroll positions before navigating
+  saveScrollPositions()
   router.push(`/leads/${lead.id}`)
 }
 
@@ -338,36 +338,42 @@ watch(searchQuery, () => {
 
 // Scroll position preservation
 const kanbanBoardRef = ref(null)
-let savedScrollLeft = 0
-const columnScrollPositions = new Map()
 
-onDeactivated(() => {
-  if (kanbanBoardRef.value) {
-    savedScrollLeft = kanbanBoardRef.value.scrollLeft
-    kanbanBoardRef.value.querySelectorAll('.column-content').forEach((el, i) => {
-      columnScrollPositions.set(i, el.scrollTop)
-    })
+const saveScrollPositions = () => {
+  if (!kanbanBoardRef.value) return
+  const data = {
+    boardScroll: kanbanBoardRef.value.scrollLeft,
+    columns: {}
   }
-})
+  kanbanBoardRef.value.querySelectorAll('.column-content').forEach((el, i) => {
+    data.columns[i] = el.scrollTop
+  })
+  sessionStorage.setItem('kanban-scroll', JSON.stringify(data))
+}
 
-onActivated(() => {
+const restoreScrollPositions = () => {
+  const raw = sessionStorage.getItem('kanban-scroll')
+  if (!raw) return
+  sessionStorage.removeItem('kanban-scroll')
+  const data = JSON.parse(raw)
   nextTick(() => {
     requestAnimationFrame(() => {
       if (kanbanBoardRef.value) {
-        kanbanBoardRef.value.scrollLeft = savedScrollLeft
+        kanbanBoardRef.value.scrollLeft = data.boardScroll || 0
         kanbanBoardRef.value.querySelectorAll('.column-content').forEach((el, i) => {
-          if (columnScrollPositions.has(i)) {
-            el.scrollTop = columnScrollPositions.get(i)
+          if (data.columns[i] !== undefined) {
+            el.scrollTop = data.columns[i]
           }
         })
       }
     })
   })
-})
+}
 
-onMounted(() => {
-  fetchLeads()
-  fetchStatuses()
+onMounted(async () => {
+  await Promise.all([fetchLeads(), fetchStatuses()])
+  // Restore scroll after data is loaded and rendered
+  restoreScrollPositions()
 })
 </script>
 
