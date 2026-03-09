@@ -298,9 +298,9 @@ onUnmounted(() => {
 
       <!-- Page Content -->
       <div class="page-content">
-        <RouterView v-slot="{ Component }">
+        <RouterView v-slot="{ Component, route: viewRoute }">
           <KeepAlive include="KanbanBoard,LeadsList">
-            <component :is="Component" />
+            <component :is="Component" :key="viewRoute.name" />
           </KeepAlive>
         </RouterView>
       </div>

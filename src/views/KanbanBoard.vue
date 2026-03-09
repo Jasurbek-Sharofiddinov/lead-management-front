@@ -1,10 +1,8 @@
-<script>
-export default { name: 'KanbanBoard' }
-</script>
-
 <script setup>
 import { ref, onMounted, onActivated, onDeactivated, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
+
+defineOptions({ name: 'KanbanBoard' })
 import {
   getLeads,
   updateLead,
@@ -343,34 +341,28 @@ const kanbanBoardRef = ref(null)
 let savedScrollLeft = 0
 const columnScrollPositions = new Map()
 
-const saveScrollPositions = () => {
+onDeactivated(() => {
   if (kanbanBoardRef.value) {
     savedScrollLeft = kanbanBoardRef.value.scrollLeft
     kanbanBoardRef.value.querySelectorAll('.column-content').forEach((el, i) => {
       columnScrollPositions.set(i, el.scrollTop)
     })
   }
-}
-
-const restoreScrollPositions = () => {
-  nextTick(() => {
-    if (kanbanBoardRef.value) {
-      kanbanBoardRef.value.scrollLeft = savedScrollLeft
-      kanbanBoardRef.value.querySelectorAll('.column-content').forEach((el, i) => {
-        if (columnScrollPositions.has(i)) {
-          el.scrollTop = columnScrollPositions.get(i)
-        }
-      })
-    }
-  })
-}
-
-onActivated(() => {
-  restoreScrollPositions()
 })
 
-onDeactivated(() => {
-  saveScrollPositions()
+onActivated(() => {
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      if (kanbanBoardRef.value) {
+        kanbanBoardRef.value.scrollLeft = savedScrollLeft
+        kanbanBoardRef.value.querySelectorAll('.column-content').forEach((el, i) => {
+          if (columnScrollPositions.has(i)) {
+            el.scrollTop = columnScrollPositions.get(i)
+          }
+        })
+      }
+    })
+  })
 })
 
 onMounted(() => {
