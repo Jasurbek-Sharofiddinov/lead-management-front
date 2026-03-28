@@ -224,7 +224,7 @@ onUnmounted(() => {
             <!-- Notifications Dropdown -->
             <div v-if="showNotifications && notifications.length" class="notifications-dropdown">
               <div class="notifications-header">
-                <span>Reminders</span>
+                <span>Notifications</span>
                 <button class="btn-ghost btn-sm" @click="showNotifications = false">Close</button>
               </div>
               <div class="notifications-list">
