@@ -53,10 +53,15 @@ const leadFields = [
   { value: 'has_accounting', label: 'Has Accounting' },
   { value: 'english_knowledge', label: 'English Knowledge' },
   { value: 'living_address', label: 'Living Address' },
-  { value: 'source', label: 'Source' },
+  { value: 'source', label: 'Source / Referer' },
   { value: 'notes', label: 'Notes' },
   { value: 'status', label: 'Status' },
   { value: 'assigned_to', label: 'Assigned To' },
+  { value: 'original_created_time', label: 'Created Time (sent)' },
+  { value: 'form_name', label: 'Form ID / Name' },
+  { value: 'campaign_name', label: 'Campaign Name' },
+  { value: 'ad_name', label: 'Ad Name' },
+  { value: 'source_sheet', label: 'Request ID / Sheet' },
 ]
 
 const fetchSources = async () => {
