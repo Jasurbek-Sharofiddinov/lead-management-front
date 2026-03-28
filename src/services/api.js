@@ -100,4 +100,13 @@ export const importExcel = (file, source) => {
   })
 }
 
+// Google Sheets
+export const getGoogleSheets = () => api.get('/google-sheets')
+export const createGoogleSheet = (data) => api.post('/google-sheets', data)
+export const updateGoogleSheet = (id, data) => api.put(`/google-sheets/${id}`, data)
+export const deleteGoogleSheet = (id) => api.delete(`/google-sheets/${id}`)
+export const syncGoogleSheet = (id) => api.post(`/google-sheets/${id}/sync`)
+export const resetGoogleSheetSync = (id) => api.post(`/google-sheets/${id}/reset-sync`)
+export const previewGoogleSheet = (url) => api.post('/google-sheets/preview', { url })
+
 export default api
