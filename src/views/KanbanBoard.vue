@@ -318,9 +318,20 @@ const formatDate = (dateStr) => {
 
 const shortenFilename = (filename) => {
   if (!filename) return ''
-  // Remove extension
   const name = filename.replace(/\.[^.]+$/, '')
   return name.length > 18 ? name.slice(0, 18) + '...' : name
+}
+
+const formatSource = (val) => {
+  if (!val) return ''
+  // If it's a URL, extract the domain
+  if (val.startsWith('http')) {
+    try {
+      const url = new URL(val)
+      return url.hostname.replace('www.', '')
+    } catch { return val.slice(0, 20) + '...' }
+  }
+  return val.length > 20 ? val.slice(0, 20) + '...' : val
 }
 
 const clearFilters = () => {
@@ -473,10 +484,10 @@ onMounted(async () => {
             <div v-if="lead.company && lead.name" class="lead-company">{{ lead.company }}</div>
             <div class="lead-info">
               <span v-if="lead.phone" class="lead-phone">{{ formatPhone(lead.phone) }}</span>
-              <span v-if="lead.source" class="lead-source">{{ lead.source }}</span>
+              <span v-if="lead.source" class="lead-source" :title="lead.source">{{ formatSource(lead.source) }}</span>
             </div>
             <div class="lead-meta">
-              <span v-if="lead.source_file" class="lead-file" :title="lead.source_file">{{ shortenFilename(lead.source_file) }}</span>
+              <span v-if="lead.source_file" class="lead-file" :title="lead.source_file">{{ formatSource(lead.source_file) }}</span>
               <span v-if="lead.created_at" class="lead-date">{{ formatDate(lead.created_at) }}</span>
             </div>
           </div>
@@ -902,7 +913,10 @@ onMounted(async () => {
   padding: 2px 8px;
   background: var(--bg-elevated);
   border-radius: 4px;
-  text-transform: capitalize;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lead-meta {
